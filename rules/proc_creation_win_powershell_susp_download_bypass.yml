@@ -1,0 +1,42 @@
+title: Suspicious PowerShell Download Cradle and Execution Bypass
+id: 4b9a8f23-1d4e-4f7c-9b21-8f5e1a2c3d4e
+status: experimental
+description: Detects suspicious PowerShell command-line execution patterns commonly leveraged by threat actors to bypass execution policies, hide windows, and download remote payloads into memory.
+references:
+    - https://attack.mitre.org/techniques/T1059/001/
+author: Ahmet Furkan Husmek
+date: 2026-10-20
+tags:
+    - attack.execution
+    - attack.t1059.001
+logsource:
+    category: process_creation
+    product: windows
+detection:
+    selection_process:
+        - Image|endswith: '\powershell.exe'
+        - OriginalFileName: 'PowerShell.EXE'
+    selection_bypass:
+        CommandLine|contains:
+            - '-ep bypass'
+            - '-ExecutionPolicy Bypass'
+            - '-ExecutionPolicy Unrestricted'
+            - '-nop'
+            - '-NoProfile'
+            - '-w hidden'
+            - '-WindowStyle Hidden'
+    selection_download:
+        CommandLine|contains:
+            - 'DownloadString'
+            - 'DownloadFile'
+            - 'Net.WebClient'
+            - 'Invoke-WebRequest'
+            - 'iwr '
+            - 'curl '
+            - 'wget '
+            - 'IEX'
+            - 'Invoke-Expression'
+    condition: selection_process and (selection_bypass and selection_download)
+falsepositives:
+    - Administrative software deployment scripts
+level: high
