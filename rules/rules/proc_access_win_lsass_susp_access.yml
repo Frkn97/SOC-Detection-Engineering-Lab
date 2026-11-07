@@ -1,0 +1,36 @@
+title: Suspicious LSASS Process Access for Credential Dumping
+id: 3f4a91b2-8c11-4e67-9c98-1003001lsass
+status: experimental
+description: Detects suspicious process access attempts to LSASS memory, typical of credential dumping utilities (e.g. Mimikatz, Dumpert, Taskmgr/Procdump).
+references:
+    - https://attack.mitre.org/techniques/T1003/001/
+author: Ahmet Furkan Hüsmek
+date: 2026-10-20
+modified: 2026-11-07
+tags:
+    - attack.credential_access
+    - attack.t1003.001
+logsource:
+    category: process_access
+    product: windows
+detection:
+    selection:
+        TargetImage|endswith: '\lsass.exe'
+        GrantedAccess|contains:
+            - '0x1010'
+            - '0x1410'
+            - '0x1438'
+            - '0x143a'
+            - '0x1f0fff'
+            - '0x1f1fff'
+            - '0x1f3fff'
+    filter_legitimate:
+        SourceImage|endswith:
+            - ':\Windows\System32\svchost.exe'
+            - ':\Windows\System32\services.exe'
+            - ':\Program Files\Windows Defender\MsMpEng.exe'
+    condition: selection and not filter_legitimate
+falsepositives:
+    - Antivirus and EDR agents querying LSASS handles for protection.
+    - Legitimate system administration backup tools.
+level: high
